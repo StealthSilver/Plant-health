@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2f8f5b" />
+  <title>LeafCheck — Plant Disease Detector</title>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f1f7f2;
+      --card: #ffffff;
+      --surface: #f6faf7;
+      --text: #20352a;
+      --muted: #75857a;
+      --border: #e2ece4;
+      --accent: #2f8f5b;
+      --accent-dark: #247348;
+      --accent-soft: #e8f5ec;
+      --danger: #d94b4b;
+      --danger-bg: #fff0ef;
+      --warning: #b77916;
+      --warning-bg: #fff7e6;
+      --shadow: 0 16px 50px rgba(35, 80, 48, 0.09);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #101a14;
+        --card: #1b2920;
+        --surface: #24342a;
+        --text: #e7f1e9;
+        --muted: #a0b2a4;
+        --border: #34483a;
+        --accent: #55b77a;
+        --accent-dark: #3e9b62;
+        --accent-soft: #253d2e;
+        --danger: #ff7777;
+        --danger-bg: #432626;
+        --warning: #f0c16b;
+        --warning-bg: #44371f;
+        --shadow: 0 16px 50px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 32px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(47,143,91,.12), transparent 35%),
+        radial-gradient(circle at 90% 90%, rgba(47,143,91,.10), transparent 35%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      width: 54px;
+      height: 54px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--accent-soft);
+      border-radius: 18px;
+      margin-bottom: 12px;
+    }
+
+    .logo svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--accent);
+    }
+
+    .header h1 {
+      font-size: 29px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .header h1 span {
+      color: var(--accent);
+    }
+
+    .header p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 7px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .intro {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .upload-area {
+      position: relative;
+      border: 2px dashed var(--border);
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: .2s ease;
+      overflow: hidden;
+    }
+
+    .upload-area:hover,
+    .upload-area.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      border-radius: 15px;
+      background: var(--accent-soft);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--accent);
+    }
+
+    .upload-icon svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    .upload-area h3 {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .upload-area p {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .upload-area input {
+      display: none;
+    }
+
+    .preview-container {
+      display: none;
+      margin-top: 16px;
+      position: relative;
+    }
+
+    .preview-container img {
+      width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .image-info {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .remove-btn {
+      border: none;
+      background: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .model-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 12px;
+      background: var(--accent-soft);
+      border-radius: 12px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .model-note svg {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+
+    .primary-btn {
+      width: 100%;
+      border: none;
+      background: var(--accent);
+      color: white;
+      padding: 15px;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: .2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .primary-btn:hover:not(:disabled) {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .primary-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 17px;
+      height: 17px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+
+    .loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-box {
+      display: none;
+      background: var(--danger-bg);
+      border: 1px solid rgba(217,75,75,.25);
+      color: var(--danger);
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 15px;
+    }
+
+    /* Results */
+
+    #resultSection {
+      display: none;
+      animation: fadeIn .4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-image {
+      width: 100%;
+      height: 210px;
+      object-fit: cover;
+      border-radius: 15px;
+      margin-bottom: 18px;
+      background: var(--surface);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 13px;
+    }
+
+    .status-pill.healthy {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .status-pill.diseased {
+      color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .result-title {
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+      margin-bottom: 5px;
+      line-height: 1.3;
+    }
+
+    .plant-name {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .confidence-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 9px;
+    }
+
+    .confidence-header span:last-child {
+      font-weight: 800;
+      color: var(--accent);
+      font-size: 17px;
+    }
+
+    .progress-track {
+      height: 9px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 20px;
+      transition: width 1.2s ease;
+    }
+
+    .warning-box {
+      display: none;
+      background: var(--warning-bg);
+      color: var(--warning);
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 16px;
+      border: 1px solid rgba(183,121,22,.2);
+    }
+
+    .tip-box {
+      padding: 15px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-top: 20px;
+    }
+
+    .tip-heading {
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tip-heading span {
+      color: var(--accent);
+      font-size: 18px;
+    }
+
+    .tip-box p {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .matches {
+      margin-top: 22px;
+    }
+
+    .section-heading {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .match-item {
+      margin-bottom: 14px;
+    }
+
+    .match-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      margin-bottom: 7px;
+    }
+
+    .match-label {
+      color: var(--text);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .match-score {
+      color: var(--muted);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .match-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .match-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 20px;
+    }
+
+    .reset-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px;
+      border-radius: 13px;
+      margin-top: 23px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .reset-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 22px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 22px 13px;
+        align-items: flex-start;
+      }
+
+      .card {
+        padding: 19px;
+      }
+
+      .header {
+        margin-bottom: 20px;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="app">
+
+    <header class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.8 3.2C11.6 2.5 5.3 4.8 3.1 10.2c-1.3 3.1.1 6.6 3.1 7.9 2.7 1.2 5.8.1 7.4-2.4 1.3-2 1.8-4.8 1.6-7.5-2.4 1.4-4.5 3.6-6 6.3 1.2-4.4 4.9-8.1 11.6-11.3z"/>
+          <path d="M4 21c2.8-5.8 6.8-9.6 12-12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h1>Leaf<span>Check</span></h1>
+      <p>Smart Plant Disease Detection</p>
+    </header>
+
+    <section class="card" id="uploadSection">
+
+      <p class="intro">
+        Upload a photo of your plant leaf and let AI identify
+        whether it's healthy or affected by a disease.
+      </p>
+
+      <div class="upload-area" id="uploadArea">
+
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png" />
+
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 16V4m-5 5 5-5 5 5"/>
+            <path d="M20 16.5v2A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-2"/>
+          </svg>
+        </div>
+
+        <h3>Upload your leaf image</h3>
+        <p>Click to browse or drag & drop here</p>
+        <p style="margin-top:8px">JPG or PNG · Max 10 MB</p>
+      </div>
+
+      <div class="preview-container" id="previewContainer">
+        <img id="previewImage" alt="Selected plant leaf preview" />
+        <div class="image-info">
+          <span id="fileName">Selected image</span>
+          <button class="remove-btn" id="removeBtn">Remove image</button>
+        </div>
+      </div>
+
+      <div class="model-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 11v5m0-8h.01"/>
+        </svg>
+        <span>
+          AI-powered analysis runs directly in your browser.
+          The AI model (~85 MB) will be downloaded the first time
+          you check a plant. An internet connection is required
+          for the initial download.
+        </span>
+      </div>
+
+      <button class="primary-btn" id="checkBtn" disabled>
+        <span class="spinner"></span>
+        <span id="buttonText">Check Plant</span>
+      </button>
+
+      <div class="error-box" id="errorBox" role="alert"></div>
+
+    </section>
+
+    <section class="card" id="resultSection">
+
+      <img id="resultImage" class="result-image" alt="Analyzed plant leaf" />
+
+      <div>
+        <div class="status-pill" id="statusPill">
+          <span id="statusIcon">●</span>
+          <span id="statusText">Healthy</span>
+        </div>
+
+        <h2 class="result-title" id="conditionName">Healthy</h2>
+        <p class="plant-name" id="plantName">Plant identification</p>
+      </div>
+
+      <div>
+        <div class="confidence-header">
+          <span>AI Confidence</span>
+          <span id="confidenceValue">0%</span>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" id="confidenceBar"></div>
+        </div>
+      </div>
+
+      <div class="warning-box" id="warningBox">
+        ⚠️ Low confidence. Try a clearer, closer photo of a single leaf.
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-heading">
+          <span>✦</span>
+          Recommended Action
+        </div>
+        <p id="tipText"></p>
+      </div>
+
+      <div class="matches">
+        <h3 class="section-heading">Top matches</h3>
+        <div id="matchesList"></div>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">
+        ↻ Check another plant
+      </button>
+
+    </section>
+
+    <footer>
+      For learning purposes. Not a substitute for expert diagnosis.
+    </footer>
+
+  </main>
+
+  <script type="module">
+
+    const uploadArea = document.getElementById("uploadArea");
+    const fileInput = document.getElementById("fileInput");
+    const previewContainer = document.getElementById("previewContainer");
+    const previewImage = document.getElementById("previewImage");
+    const fileName = document.getElementById("fileName");
+    const removeBtn = document.getElementById("removeBtn");
+
+    const checkBtn = document.getElementById("checkBtn");
+    const buttonText = document.getElementById("buttonText");
+    const errorBox = document.getElementById("errorBox");
+
+    const uploadSection = document.getElementById("uploadSection");
+    const resultSection = document.getElementById("resultSection");
+
+    let selectedFile = null;
+    let imageUrl = null;
+    let classifier = null;
+    let modelLoading = false;
+
+    const MODEL_ID = "rodynaemad/plant-disease-dinov2-small";
+
+    // ------------------------------------------------
+    // Image Upload
+    // ------------------------------------------------
+
+    uploadArea.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    uploadArea.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("dragover");
+    });
+
+    uploadArea.addEventListener("drop", (event) => {
+      event.preventDefault();
+      uploadArea.classList.remove("dragover");
+
+      const file = event.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+
+      hideError();
+
+      const validTypes = ["image/jpeg", "image/png"];
+
+      if (!validTypes.includes(file.type)) {
+        showError("Invalid file type. Please upload a JPG or PNG image.");
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        showError("File is too large. Please upload an image smaller than 10 MB.");
+        return;
+      }
+
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+      }
+
+      selectedFile = file;
+      imageUrl = URL.createObjectURL(file);
+
+      previewImage.src = imageUrl;
+      fileName.textContent = file.name;
+
+      previewContainer.style.display = "block";
+      uploadArea.style.display = "none";
+
+      checkBtn.disabled = false;
+      buttonText.textContent = "Check Plant";
+    }
+
+    // ------------------------------------------------
+    // Remove Image
+    // ------------------------------------------------
+
+    removeBtn.addEventListener("click", resetUpload);
+
+    function resetUpload() {
+
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+        imageUrl = null;
+      }
+
+      selectedFile = null;
+      fileInput.value = "";
+      previewImage.src = "";
+
+      previewContainer.style.display = "none";
+      uploadArea.style.display = "block";
+
+      checkBtn.disabled = true;
+      buttonText.textContent = "Check Plant";
+
+      hideError();
+    }
+
+    // ------------------------------------------------
+    // Error Handling
+    // ------------------------------------------------
+
+    function showError(message) {
+      errorBox.textContent = "⚠️ " + message;
+      errorBox.style.display = "block";
+    }
+
+    function hideError() {
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+    }
+
+    // ------------------------------------------------
+    // Lazy Load Transformers.js Model
+    // ------------------------------------------------
+
+    async function loadModel() {
+
+      if (classifier) return classifier;
+
+      if (modelLoading) {
+        throw new Error("The AI model is already loading. Please wait.");
+      }
+
+      modelLoading = true;
+
+      buttonText.textContent = "Loading AI model...";
+      checkBtn.classList.add("loading");
+
+      try {
+
+        const { pipeline, env } = await import(
+          "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2"
+        );
+
+        // Configure browser-side model execution.
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+
+        classifier = await pipeline(
+          "image-classification",
+          MODEL_ID,
+          {
+            dtype: "fp32",
+            model_file_name: "model_with_features"
+          }
+        );
+
+        return classifier;
+
+      } catch (error) {
+
+        classifier = null;
+
+        console.error("Model loading error:", error);
+
+        throw new Error(
+          "Unable to load the AI model. Please check your internet connection and try again."
+        );
+
+      } finally {
+        modelLoading = false;
+      }
+    }
+
+    // ------------------------------------------------
+    // Image Analysis
+    // ------------------------------------------------
+
+    checkBtn.addEventListener("click", async () => {
+
+      if (!selectedFile || modelLoading) return;
+
+      hideError();
+
+      checkBtn.disabled = true;
+
+      try {
+
+        // First click triggers lazy model loading.
+        const model = await loadModel();
+
+        buttonText.textContent = "Analyzing image...";
+
+        const results = await model(imageUrl, {
+          top_k: 3
+        });
+
+        if (!results || !Array.isArray(results) || results.length === 0) {
+          throw new Error(
+            "No results were returned. Please try another clear plant leaf image."
+          );
+        }
+
+        displayResults(results);
+
+      } catch (error) {
+
+        console.error("Analysis error:", error);
+
+        showError(
+          error.message || "Something went wrong while analyzing the image. Please try again."
+        );
+
+      } finally {
+
+        checkBtn.disabled = false;
+        checkBtn.classList.remove("loading");
+        buttonText.textContent = "Check Plant";
+
+      }
+
+    });
+
+    // ------------------------------------------------
+    // Format Model Labels
+    // ------------------------------------------------
+
+    function formatLabel(label) {
+
+      return label
+        .replace(/___/g, " - ")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function getPlantAndCondition(label) {
+
+      const parts = label.split("___");
+
+      const plant = parts[0] || "Unknown Plant";
+      const condition = parts.slice(1).join("___") || "Unknown Condition";
+
+      return {
+        plant: formatLabel(plant),
+        condition: formatLabel(condition),
+        isHealthy: condition.toLowerCase().includes("healthy")
+      };
+    }
+
+    function formatPercentage(score) {
+      return (score * 100).toFixed(1);
+    }
+
+    // ------------------------------------------------
+    // Display Results
+    // ------------------------------------------------
+
+    function displayResults(results) {
+
+      const topResult = results[0];
+
+      const score = topResult.score || 0;
+
+      const confidence = Math.max(
+        0,
+        Math.min(100, score * 100)
+      );
+
+      const parsed = getPlantAndCondition(topResult.label);
+
+      const isHealthy = parsed.isHealthy;
+
+      // Set result image.
+      document.getElementById("resultImage").src = imageUrl;
+
+      // Set status.
+      const statusPill = document.getElementById("statusPill");
+
+      statusPill.className = "status-pill " +
+        (isHealthy ? "healthy" : "diseased");
+
+      document.getElementById("statusIcon").textContent =
+        isHealthy ? "✓" : "●";
+
+      document.getElementById("statusText").textContent =
+        isHealthy ? "Healthy" : "Disease detected";
+
+      // Set condition and plant name.
+      document.getElementById("conditionName").textContent =
+        parsed.condition;
+
+      document.getElementById("plantName").textContent =
+        parsed.plant;
+
+      // Set confidence.
+      document.getElementById("confidenceValue").textContent =
+        formatPercentage(score) + "%";
+
+      const confidenceBar = document.getElementById("confidenceBar");
+
+      confidenceBar.style.width = "0%";
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          confidenceBar.style.width = confidence + "%";
+        });
+      });
+
+      // Low confidence warning.
+      document.getElementById("warningBox").style.display =
+        confidence < 60 ? "block" : "none";
+
+      // Recommended action.
+      const tipText = document.getElementById("tipText");
+
+      if (isHealthy) {
+
+        tipText.textContent =
+          "Your leaf appears healthy! Keep maintaining proper watering, " +
+          "provide adequate sunlight, ensure good soil drainage, and " +
+          "continue monitoring your plant regularly.";
+
+      } else {
+
+        tipText.textContent =
+          "A possible plant disease has been detected. Isolate this plant " +
+          "from other plants to prevent potential spread. Avoid wetting the " +
+          "leaves, inspect nearby plants, and consult a plant health expert " +
+          "for confirmation and appropriate treatment.";
+
+      }
+
+      // Top matches.
+      const matchesList = document.getElementById("matchesList");
+
+      matchesList.innerHTML = "";
+
+      results.slice(0, 3).forEach((item, index) => {
+
+        const percentage = Math.max(
+          0,
+          Math.min(100, item.score * 100)
+        );
+
+        const parsedMatch = getPlantAndCondition(item.label);
+
+        const matchItem = document.createElement("div");
+        matchItem.className = "match-item";
+
+        const matchTop = document.createElement("div");
+        matchTop.className = "match-top";
+
+        const label = document.createElement("span");
+        label.className = "match-label";
+        label.textContent =
+          (index + 1) + ". " +
+          parsedMatch.plant + " — " +
+          parsedMatch.condition;
+
+        const scoreText = document.createElement("span");
+        scoreText.className = "match-score";
+        scoreText.textContent = percentage.toFixed(1) + "%";
+
+        matchTop.appendChild(label);
+        matchTop.appendChild(scoreText);
+
+        const track = document.createElement("div");
+        track.className = "match-track";
+
+        const fill = document.createElement("div");
+        fill.className = "match-fill";
+        fill.style.width = percentage + "%";
+
+        track.appendChild(fill);
+
+        matchItem.appendChild(matchTop);
+        matchItem.appendChild(track);
+
+        matchesList.appendChild(matchItem);
+
+      });
+
+      // Switch screens.
+      uploadSection.style.display = "none";
+      resultSection.style.display = "block";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+    }
+
+    // ------------------------------------------------
+    // Reset Application
+    // ------------------------------------------------
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+
+      resultSection.style.display = "none";
+      uploadSection.style.display = "block";
+
+      resetUpload();
+
+      document.getElementById("confidenceBar").style.width = "0%";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+    });
+
+  </script>
+
+</body>
+</html>
